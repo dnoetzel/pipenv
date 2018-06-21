@@ -1209,7 +1209,7 @@ def translate_markers(pipfile_entry):
     :returns: A normalized dictionary with cleaned marker entries
     """
     if not isinstance(pipfile_entry, Mapping):
-        pass
+        raise TypeError('Entry is not a pipfile formatted mapping.')
     from notpip._vendor.distlib.markers import DEFAULT_CONTEXT as marker_context
     allowed_marker_keys = ['markers'] + [k for k in marker_context.keys()]
     provided_keys = list(pipfile_entry.keys()) if hasattr(pipfile_entry, 'keys') else []
@@ -1253,12 +1253,18 @@ def clean_resolved_dep(dep, is_top_level=False, pipfile_entry=None):
     if 'markers' in dep:
         # First, handle the case where there is no top level dependency in the pipfile
         if not is_top_level:
-            lockfile['markers'] = dep['markers']
+            try:
+                lockfile['markers'] = translate_markers(dep)['markers']
+            except TypeError:
+                pass
         # otherwise make sure we are prioritizing whatever the pipfile says about the markers
         # If the pipfile says nothing, then we should put nothing in the lockfile
         else:
-            pipfile_entry = translate_markers(pipfile_entry)
-            lockfile['markers'] = pipfile_entry.get('markers')
+            try:
+                pipfile_entry = translate_markers(pipfile_entry)
+                lockfile['markers'] = pipfile_entry.get('markers')
+            except TypeError:
+                pass
     return {name: lockfile}
 
 
