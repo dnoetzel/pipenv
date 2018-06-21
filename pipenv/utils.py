@@ -1208,20 +1208,23 @@ def translate_markers(pipfile_entry):
     :type pipfile_entry: dict
     :returns: A normalized dictionary with cleaned marker entries
     """
+    if not isinstance(pipfile_entry, Mapping):
+        pass
     from notpip._vendor.distlib.markers import DEFAULT_CONTEXT as marker_context
     allowed_marker_keys = ['markers'] + [k for k in marker_context.keys()]
     provided_keys = list(pipfile_entry.keys()) if hasattr(pipfile_entry, 'keys') else []
     pipfile_marker = next((k for k in provided_keys if k in allowed_marker_keys), None)
+    new_pipfile = pipfile_entry.copy()
     if pipfile_marker:
         entry = "{0}".format(pipfile_entry[pipfile_marker])
         if pipfile_marker != 'markers':
             entry = "{0} {1}".format(pipfile_marker, entry)
-            pipfile_entry['markers'] = entry
-            pipfile_entry.pop(pipfile_marker)
-    return pipfile_entry
+            new_pipfile.pop(pipfile_marker)
+        new_pipfile['markers'] = entry
+    return new_pipfile
+
 
 def clean_resolved_dep(dep, is_top_level=False, pipfile_entry=None):
-
     name = pep423_name(dep['name'])
     # We use this to determine if there are any markers on top level packages
     # So we can make sure those win out during resolution if the packages reoccur
